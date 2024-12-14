@@ -1,0 +1,29 @@
+.animate-slideIn-up {
+  --direction: 1;
+  animation:
+    slide 0.5s ease-out,
+    blink 2s infinite alternate 0.5s;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateY(calc(var(--direction) * 200%));
+    opacity: 0;
+  }
+  40% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
