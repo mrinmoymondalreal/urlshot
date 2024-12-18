@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Window from "./components/Window";
 import { AnimatePresence, motion } from "motion/react";
@@ -22,11 +22,18 @@ function AddURL() {
 
   const SetURLs = useSetAtom(urlsAtom);
 
+  const [isPending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    window.addEventListener("keydown", () => {
+    const handleKeyDown = () => {
       const isFocused = InputRef.current === document.activeElement;
       if (!isFocused) return InputRef?.current?.focus();
-    });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
@@ -46,12 +53,16 @@ function AddURL() {
         className="flex flex-col w-fit justify-center items-center space-y-4"
         onSubmit={() => console.log}
       >
+        {error && (
+          <div className="bg-red-500 text-white p-2 rounded-md">{error}</div>
+        )}
         <p className="w-full px-2">
           <textarea
-            className="w-full resize-none border-b md:border-b-0 text-center focus:placeholder:text-transparent focus:caret-inherit caret-transparent block bg-transparent outline-none text-4xl px-4 py-6 h-full mx-auto max-w-[500px]"
+            className="w-full resize-none border-b md:border-b-0 text-center disabled:text-slate-400 focus:placeholder:text-transparent focus:caret-inherit caret-transparent block bg-transparent outline-none text-4xl px-4 py-6 h-full mx-auto max-w-[500px]"
             placeholder="Start Typing..."
             rows={1}
             ref={InputRef}
+            aria-disabled={isPending}
             onInput={function (e) {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = "auto";
@@ -64,12 +75,35 @@ function AddURL() {
           ></textarea>
         </p>
         <button
-          className="bg-slate-400/10 text-slate-200 px-8 py-2 rounded-md"
-          onClick={() => {
+          className="bg-slate-400/10 text-slate-200 disabled:bg-slate-400 px-8 py-2 rounded-md"
+          type="submit"
+          aria-disabled={isPending}
+          onClick={async (e) => {
+            e.preventDefault();
+            setPending(true);
+            setError(null);
+            const response = await fetch(
+              `${import.meta.env.VITE_BACKEND_URL}/api/create_url`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ url: InputRef.current?.value.trim() }),
+              }
+            );
+            let result = await response.text();
+            if (response.status !== 200) {
+              setPending(false);
+              setError(result);
+
+              return;
+            }
             SetURLs([
               InputRef.current?.value.trim() || "",
-              "http://localhost:3000",
+              `${import.meta.env.VITE_BACKEND_URL}/${result}`,
             ]);
+            setPending(false);
             setSubmitted(true);
           }}
         >
@@ -92,15 +126,15 @@ function App() {
   return (
     <>
       <Main />
-      <div className="absolute bottom-0 right-0 text-slate-300 m-8 mx-10 text-right">
+      <div className="absolute bottom-0 right-0 text-slate-300 m-4 md:m-8 md:mx-10 text-right">
         <div>
           Created by{" "}
-          <a className="underline" href="">
+          <a className="underline" href="https://github.com/mrinmoymondalreal">
             Mrinmoy Mondal
           </a>
         </div>
         <AlertDialog>
-          <AlertDialogTrigger className="underline decoration-slate-500">
+          <AlertDialogTrigger className="underline">
             Usage Policy
           </AlertDialogTrigger>
           <AlertDialogContent className="dark">
@@ -108,7 +142,7 @@ function App() {
               <AlertDialogTitle>Usage Policy</AlertDialogTitle>
               <AlertDialogDescription>
                 <ul className="my-6 ml-6 list-disc [&>li]:mt-2">
-                  <li>Shorten URL only works for 72hrs</li>
+                  <li>Shorten URL only works for 24hrs</li>
                   <li>Each User is limited to 5 short url per day.</li>
                   <li>This App is developed by Mrinmoy Mondal</li>
                 </ul>

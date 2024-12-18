@@ -33,6 +33,13 @@ function AnimateURL({ oldurl, newurl }: { oldurl: string; newurl: string }) {
   useEffect(() => {
     let decrytTimeout: NodeJS.Timeout;
 
+    function calculateInterval(length: number) {
+      const baseTime = 2000; // 2 seconds in milliseconds
+      return baseTime / length;
+    }
+
+    const intervalTime = calculateInterval(newURL.length);
+
     const initTimeout = () =>
       setInterval(() => {
         setURL((u) => {
@@ -47,7 +54,7 @@ function AnimateURL({ oldurl, newurl }: { oldurl: string; newurl: string }) {
             g.join("").slice(index.current - 1)
           );
         });
-      }, 100);
+      }, intervalTime);
 
     let encrytTimeout = setInterval(() => {
       setURL((u) => {
@@ -65,7 +72,7 @@ function AnimateURL({ oldurl, newurl }: { oldurl: string; newurl: string }) {
           )
           .join("");
       });
-    }, 100);
+    }, intervalTime);
 
     return () => {
       clearInterval(encrytTimeout);
@@ -86,11 +93,11 @@ function AnimateURLWrapper() {
   }, []);
 
   return (
-    <div className="w-full md:text-3xl text-xl text-center">
+    <div className="md:text-3xl text-2xl">
       {start ? (
         <HoverCard openDelay={400}>
           <HoverCardTrigger asChild>
-            <a href={newurl} target="_blank" className="underline">
+            <a href={newurl} target="_blank" className="underline w-fit">
               <AnimateURL oldurl={oldurl} newurl={newurl} />
             </a>
           </HoverCardTrigger>
@@ -167,6 +174,8 @@ function WindowInner() {
 
   const setSubmitted = useSetAtom(SubmitAtom);
 
+  const newURL = useAtomValue(urlsAtom)[1];
+
   return (
     <motion.div
       animate={{ opacity: 1 }}
@@ -174,7 +183,7 @@ function WindowInner() {
       initial={{ opacity: 0 }}
       className="w-screen min-h-screen bg-zinc-950 flex justify-center items-center text-slate-300"
     >
-      <div className="max-w-[500px] w-full max-h-screen relative h-full min-h-[500px] flex justify-center items-center">
+      <div className="max-w-[500px] w-full max-h-screen relative h-screen md:h-[500px] flex justify-center items-center">
         <button
           className="absolute inset-6 border-2 w-fit h-fit p-1 rounded-full"
           onClick={() => setSubmitted(false)}
@@ -212,13 +221,30 @@ function WindowInner() {
               </AnimatePresence>
             </MotionConfig>
           </div>
-          <div className="row-span-1 flex justify-center items-center">
+          <div className="row-span-1 text-center md:px-0 px-4 w-full break-all flex justify-center items-center text-pretty">
             <AnimateURLWrapper />
             {isCompleted && <CopyButton />}
           </div>
           <div className="flex justify-center items-center">
             {isCompleted && (
-              <button className="bg-slate-400/10 text-slate-200 px-8 py-2 rounded-md w-fit space-x-2 flex">
+              <button
+                onClick={async () => {
+                  if (!navigator.share) return;
+                  try {
+                    // Use the Web Share API to trigger the native sharing dialog
+                    await navigator.share({
+                      title: "Share Short URLs with friends",
+                      text: "Check out this awesome Short URL!",
+                      url: newURL,
+                    });
+
+                    console.log("Shared successfully");
+                  } catch (error) {
+                    console.error("Error sharing:", error);
+                  }
+                }}
+                className="bg-slate-400/10 text-slate-200 px-8 py-2 rounded-md w-fit space-x-2 flex"
+              >
                 <div>Share</div>
                 <Share2Icon size={20} className="inline-block mt-1" />
               </button>
