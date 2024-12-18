@@ -31,7 +31,7 @@ function AnimateURL({ oldurl, newurl }: { oldurl: string; newurl: string }) {
   const setCompleted = useSetAtom(completedAtom);
 
   useEffect(() => {
-    let decrytTimeout: NodeJS.Timeout;
+    let decrytTimeout: any;
 
     function calculateInterval(length: number) {
       const baseTime = 2000; // 2 seconds in milliseconds

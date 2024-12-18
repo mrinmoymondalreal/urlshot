@@ -1,3 +1,3 @@
 Hosted on: vercel.com
 
-Live Demo: #[https://urlshot.vercel.app](https://urlshot.vercel.app)
+Live Demo: [https://url2shot.vercel.app](https://url2shot.vercel.app)
